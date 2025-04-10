@@ -1,0 +1,21 @@
+# backend/requirements.txt
+
+# === PDF Processing Libraries ===
+# Used to read text and metadata from PDF files
+pdfplumber
+
+# Used to edit PDFs (like drawing redaction boxes)
+# Note: Install as 'PyMuPDF', but import in Python as 'fitz'
+PyMuPDF
+
+# === Natural Language Processing (PII Detection) ===
+# The main spaCy library
+spacy>=3.0.0
+
+# === Web Framework & Server (for later) ===
+# The FastAPI framework for building the API
+fastapi>=0.100.0
+
+python-multipart
+# The server needed to run the FastAPI application
+uvicorn[standard]>=0.20.0
