@@ -1,6 +1,6 @@
 # Automated PDF Anonymization Tool
 
-This project provides a web-based tool for anonymizing personally identifiable information (PII) within PDF documents.
+This project offers a user-friendly web application for automatically identifying and redacting Personally Identifiable Information (PII) within uploaded PDF documents. It leverages Natural Language Processing (NLP) via spaCy to detect entities like names and locations and finetuned  specific patterns (e.g., Singapore NRIC numbers), before generating a downloadable, anonymized version of the PDF with the sensitive information blacked out.
 
 ## Live Application
 
@@ -10,7 +10,7 @@ You can access the deployed application here:
 ## Technology Stack
 
 *   **Frontend:** [Next.js](https://nextjs.org/) (React, TypeScript, Tailwind CSS) Deployed on Vercel
-*   **Backend:** [FastAPI](https://fastapi.tiangolo.com/) (Python, spaCy, PyMuPDF) Deployed on Google Cloud
+*   **Backend:** [FastAPI](https://fastapi.tiangolo.com/) (Python) Deployed on Google Cloud. Uses **spaCy** for NLP (Named Entity Recognition) and **PyMuPDF** for PDF manipulation.
 *   **Containerization:** [Docker](https://www.docker.com/)
 
 ## Project Structure
