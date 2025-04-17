@@ -1,63 +1,70 @@
 # Automated Text Anonymization Tool
 
-This project aims to provide a web-based tool for anonymizing personally identifiable information (PII) within PDF documents.
+This project provides a web-based tool for anonymizing personally identifiable information (PII) within PDF documents. It features a Next.js frontend and a FastAPI backend.
 
-## Project Status (As of Last Interaction)
+## Project Status (Current)
 
-*   **Backend:**
-    *   FastAPI server setup (`backend/main.py`).
+*   **Version Control:** Project initialized as a Git repository in the root directory and pushed to [GitHub](https://github.com/cheezycoding/Anonymizer).
+*   **Backend (FastAPI - Python):**
+    *   Located in the `backend/` directory.
+    *   API server setup (`backend/main.py`).
     *   Core logic for PDF processing (`backend/logic/process_pdf.py`):
         *   Extracts text using `pdfplumber`.
-        *   Identifies PII using `spaCy` (pre-trained model `en_core_web_sm`) for general entities (PERSON, GPE, LOC, ORG, DATE).
-        *   Identifies Singapore NRIC patterns using Regular Expressions.
-        *   Redacts identified items using `PyMuPDF` (`fitz`) by applying black bars.
-    *   API endpoint (`/anonymize`) implemented in `main.py`:
-        *   Accepts PDF file uploads.
-        *   Saves uploads to a temporary directory (`backend/temp/`).
-        *   Calls processing logic functions.
-        *   Returns the redacted PDF file directly using `FileResponse`.
-    *   Dependencies managed via `backend/requirements.txt` (including `spacy`, `python-multipart`).
-    *   Project structured as Python packages (using `__init__.py` files).
-    *   Tested locally using FastAPI's interactive `/docs` UI (file download successful).
-*   **Frontend:**
-    *   Next.js project setup using App Router (`frontend/anonymize/`).
-    *   Basic UI created (`frontend/anonymize/app/page.tsx`) with:
-        *   File input restricted to PDFs.
-        *   Button to trigger upload (logic not yet implemented).
-        *   Client-side state (`useState`) to track the selected file using `'use client';`.
-    *   Frontend development server (`npm run dev`) confirmed working.
+        *   Identifies PII using `spaCy` (`en_core_web_sm`) and Regex (for NRICs).
+        *   Redacts identified items using `PyMuPDF` (`fitz`).
+    *   API endpoint (`/anonymize`) accepts PDF uploads and returns the redacted file.
+    *   Uses CORS middleware (`fastapi.middleware.cors`) to allow requests from the frontend origin (`http://localhost:3000`).
+    *   Dependencies managed via `backend/requirements.txt`.
+*   **Frontend (Next.js - TypeScript):**
+    *   Located in the `frontend/anonymize/` directory.
+    *   User interface built using React and Tailwind CSS (`frontend/anonymize/app/page.tsx`).
+    *   Allows users to select/upload a PDF file.
+    *   Handles file upload to the backend API (`/anonymize`) using `fetch` and `FormData`.
+    *   Receives the processed PDF from the backend as a `Blob`.
+    *   Triggers an automatic browser download for the anonymized PDF.
+    *   Includes basic error handling (including CORS fix) and loading states.
+*   **End-to-End Flow:** Successfully tested locally. Users can upload a PDF via the frontend, have it processed by the backend, and receive the anonymized PDF as a download.
 
 ## Project Structure
 
 ```
-anonymized-pdfs/
+anonymized-pdfs/  (Repository Root: Anonymizer)
 ├── backend/             # FastAPI application and PDF logic
-│   ├── __init__.py
 │   ├── logic/           # Core PDF processing scripts
 │   │   ├── __init__.py
 │   │   ├── process_pdf.py
-│   │   └── sample_sg.pdf  # Sample PDF for testing
+│   │   └── sample*.pdf  # Sample PDFs for testing
+│   ├── temp/            # Temporary file storage (gitignored)
+│   ├── __init__.py
 │   ├── main.py          # FastAPI app definition and endpoints
-│   ├── requirements.txt # Python dependencies
-│   └── temp/            # Temporary file storage (gitignore recommended)
-├── frontend/            # Next.js application
-│   └── anonymize/       # Root of the Next.js project
+│   └── requirements.txt # Python dependencies
+├── frontend/            # Next.js application root
+│   └── anonymize/       # The actual Next.js project
 │       ├── app/           # App Router pages and layouts
+│       │   ├── globals.css
 │       │   ├── layout.tsx
-│       │   └── page.tsx   # Main page UI
-│       ├── node_modules/  # (gitignore recommended)
+│       │   └── page.tsx   # Main page UI component
+│       ├── components/    # UI components (if any added later)
 │       ├── public/        # Static assets
-│       ├── package.json   # Node.js dependencies
-│       └── ... (other Next.js config files)
-├── venv/                # Python virtual environment (gitignore recommended)
-├── .gitignore           # Specifies intentionally untracked files
-└── README.md            # This file - project overview and status
+│       ├── .gitignore     # Frontend specific gitignore
+│       ├── next.config.mjs
+│       ├── package.json   # Node.js dependencies & scripts
+│       ├── README.md      # Next.js default README
+│       └── tsconfig.json
+├── .gitignore           # Project root gitignore (IMPORTANT!)
+├── README.md            # This file - project overview and status
+└── venv/                # Python virtual environment (gitignored)
 ```
 
-## Next Steps (Planned)
+*(**Note:** `venv/`, `backend/temp/`, `backend/__pycache__/`, `frontend/anonymize/node_modules/`, and `frontend/anonymize/.next/` are ignored via the root `.gitignore` file.)*
 
-1.  **Implement Frontend Upload Logic:** In `frontend/anonymize/app/page.tsx`, add the JavaScript code (`fetch` or `axios`) inside the `handleUpload` function to actually send the `selectedFile` to the backend API (`http://localhost:8000/anonymize`).
-2.  **Handle Frontend Download:** Implement logic to receive the `FileResponse` from the backend and trigger the browser's download mechanism for the user.
+## Deployment Plan
+
+*   **Frontend:** Deploy to [Vercel](https://vercel.com/), connected to the GitHub repository.
+*   **Backend:**
+    1.  Containerize using Docker (`Dockerfile`).
+    2.  Push Docker image to AWS ECR (Elastic Container Registry).
+    3.  Deploy container on AWS ECS (Elastic Container Service) using the Fargate launch type.
 
 ## Setup & Running Locally
 
@@ -65,12 +72,14 @@ anonymized-pdfs/
 
 *   [Python](https://www.python.org/downloads/) >= 3.9
 *   [Node.js](https://nodejs.org/) (which includes npm/npx) >= 18.x
+*   [Git](https://git-scm.com/)
 *   Ability to create Python virtual environments (`venv`).
 
 ### Backend Setup & Run
 
-1.  Navigate to the project root (`anonymized-pdfs`).
-2.  Create and activate a Python virtual environment:
+1.  Clone the repository: `git clone git@github.com:cheezycoding/Anonymizer.git`
+2.  Navigate to the project root: `cd Anonymizer`
+3.  Create and activate a Python virtual environment:
     ```bash
     python -m venv venv
     # Windows:
@@ -78,28 +87,28 @@ anonymized-pdfs/
     # Mac/Linux:
     source venv/bin/activate
     ```
-3.  Install Python dependencies:
+4.  Install Python dependencies:
     ```bash
     pip install -r backend/requirements.txt
     ```
-4.  Download the spaCy language model:
+5.  Download the spaCy language model:
     ```bash
     python -m spacy download en_core_web_sm
     ```
-5.  Run the FastAPI server (from the project root):
+6.  Run the FastAPI server (from the project root):
     ```bash
     uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
     ```
-6.  The backend API is now available at `http://localhost:8000`. Test via `http://localhost:8000/docs`.
+7.  The backend API is now available at `http://localhost:8000`. CORS is configured to allow requests from `http://localhost:3000`.
 
 ### Frontend Setup & Run
 
-1.  Open a **new terminal**.
+1.  Open a **new terminal** in the project root (`Anonymizer`).
 2.  Navigate to the Next.js project directory:
     ```bash
     cd frontend/anonymize
     ```
-3.  Install Node.js dependencies (if not already done):
+3.  Install Node.js dependencies:
     ```bash
     npm install
     ```
