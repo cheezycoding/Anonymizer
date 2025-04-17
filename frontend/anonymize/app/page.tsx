@@ -51,8 +51,18 @@ export default function Home() {
       const formData = new FormData();
       formData.append('file', selectedFile);
       
+      // Get the API URL
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+         // Handle the case where the environment variable isn't set
+         // Maybe throw an error or set a default (though throwing is safer)
+         setErrorMessage("API URL is not configured. Please contact support.");
+         setIsProcessing(false); // Make sure to stop processing
+         return; // Stop the function
+      }
+      
       // Send the file to our backend API
-      const response = await fetch('http://localhost:8000/anonymize', {
+      const response = await fetch(`${apiUrl}/anonymize`, {
         method: 'POST',
         body: formData,
       });

@@ -5,115 +5,102 @@ This project provides a web-based tool for anonymizing personally identifiable i
 ## Project Status (Current)
 
 *   **Version Control:** Project initialized as a Git repository in the root directory and pushed to [GitHub](https://github.com/cheezycoding/Anonymizer).
-*   **Backend (FastAPI - Python):**
-    *   Located in the `backend/` directory.
-    *   API server setup (`backend/main.py`).
-    *   Core logic for PDF processing (`backend/logic/process_pdf.py`):
-        *   Extracts text using `pdfplumber`.
-        *   Identifies PII using `spaCy` (`en_core_web_sm`) and Regex (for NRICs).
-        *   Redacts identified items using `PyMuPDF` (`fitz`).
-    *   API endpoint (`/anonymize`) accepts PDF uploads and returns the redacted file.
-    *   Uses CORS middleware (`fastapi.middleware.cors`) to allow requests from the frontend origin (`http://localhost:3000`).
-    *   Dependencies managed via `backend/requirements.txt`.
 *   **Frontend (Next.js - TypeScript):**
-    *   Located in the `frontend/anonymize/` directory.
-    *   User interface built using React and Tailwind CSS (`frontend/anonymize/app/page.tsx`).
-    *   Allows users to select/upload a PDF file.
-    *   Handles file upload to the backend API (`/anonymize`) using `fetch` and `FormData`.
-    *   Receives the processed PDF from the backend as a `Blob`.
-    *   Triggers an automatic browser download for the anonymized PDF.
-    *   Includes basic error handling (including CORS fix) and loading states.
-*   **End-to-End Flow:** Successfully tested locally. Users can upload a PDF via the frontend, have it processed by the backend, and receive the anonymized PDF as a download.
+    *   Located in `frontend/anonymize/`.
+    *   User interface built using React and Tailwind CSS.
+    *   Handles PDF file upload and triggers download of the processed file.
+    *   Deployed successfully to **Vercel**: [https://anonymizer-two.vercel.app/](https://anonymizer-two.vercel.app/)
+    *   Vercel environment variable `NEXT_PUBLIC_API_URL` updated to point to the deployed backend URL. ✅
+*   **Backend (FastAPI - Python):**
+    *   Located in `backend/`.
+    *   Core logic uses `pdfplumber`, `spaCy`, `PyMuPDF` for PII detection and redaction.
+    *   API endpoint `/anonymize` processes uploaded PDFs.
+    *   CORS initially configured for `localhost:3000` and the Vercel URL.
+    *   **Dockerization:**
+        *   `backend/Dockerfile` created to containerize the application. ✅
+        *   Docker image `anonymizer-backend:latest` built successfully locally. ✅
+        *   Container runs successfully locally, exposing the API on port 8000. ✅
+    *   **Google Cloud Deployment:**
+        *   Google Cloud project `anonymizer-pdf` created. ✅
+        *   Artifact Registry API enabled. ✅
+        *   Artifact Registry repository created (`asia-southeast1`). ✅
+        *   Docker image pushed successfully to Artifact Registry. ✅
+        *   Backend deployed to **Google Cloud Run** in `asia-southeast1` region using the container image: [https://anonymizer-backend-115653311564.asia-southeast1.run.app/](https://anonymizer-backend-115653311564.asia-southeast1.run.app/) ✅
+        *   Cloud Run service configured with 1GiB RAM, 1 vCPU, min instances = 0, max instances = 1. ✅
+*   **End-to-End Flow:**
+    *   Working correctly when frontend (local or Vercel) communicates with the **local** backend. (MAYBE)
+    *   Working correctly when backend tested directly via Cloud Run URL (`/` and `/docs`). ✅
+    *   **Currently FAILING** when Vercel frontend attempts to call the deployed Cloud Run backend (`/anonymize` endpoint). ⚠️
+
+## Current Issues
+
+*   **CORS Preflight Failure:** When the deployed frontend on Vercel tries to upload a file to the deployed backend on Cloud Run, the request gets stuck in "Processing...". Browser developer tools indicate a CORS preflight (`OPTIONS`) request failure. Backend logs on Cloud Run do not show the `OPTIONS` or `POST` request arriving from the Vercel frontend during these failed attempts.
+    *   **Attempted Fix:** Temporarily set `allow_origins=["*"]` in `backend/main.py` CORS middleware. This did not resolve the issue (likely due to incompatibility with `allow_credentials=True`).
+    *   **Current Action:** Reverted `allow_origins` back to the specific list (`["http://localhost:3000", "https://anonymizer-two.vercel.app"]`). Currently rebuilding/redeploying the backend container image with this corrected configuration.
 
 ## Project Structure
 
 ```
 anonymized-pdfs/  (Repository Root: Anonymizer)
-├── backend/             # FastAPI application and PDF logic
-│   ├── logic/           # Core PDF processing scripts
-│   │   ├── __init__.py
-│   │   ├── process_pdf.py
-│   │   └── sample*.pdf  # Sample PDFs for testing
-│   ├── temp/            # Temporary file storage (gitignored)
+├── backend/
+│   ├── logic/
+│   ├── temp/            # (gitignored)
 │   ├── __init__.py
-│   ├── main.py          # FastAPI app definition and endpoints
-│   └── requirements.txt # Python dependencies
-├── frontend/            # Next.js application root
-│   └── anonymize/       # The actual Next.js project
-│       ├── app/           # App Router pages and layouts
-│       │   ├── globals.css
-│       │   ├── layout.tsx
-│       │   └── page.tsx   # Main page UI component
-│       ├── components/    # UI components (if any added later)
-│       ├── public/        # Static assets
-│       ├── .gitignore     # Frontend specific gitignore
+│   ├── main.py
+│   ├── requirements.txt
+│   └── Dockerfile       # Docker instructions for backend
+├── frontend/
+│   └── anonymize/       # Next.js project
+│       ├── app/
+│       ├── components/
+│       ├── public/
+│       ├── .gitignore
 │       ├── next.config.mjs
-│       ├── package.json   # Node.js dependencies & scripts
-│       ├── README.md      # Next.js default README
+│       ├── package.json
+│       ├── README.md
 │       └── tsconfig.json
-├── .gitignore           # Project root gitignore (IMPORTANT!)
-├── README.md            # This file - project overview and status
-└── venv/                # Python virtual environment (gitignored)
+├── .gitignore           # Project root gitignore
+├── README.md            # This file
+└── venv/                # (gitignored)
 ```
 
-*(**Note:** `venv/`, `backend/temp/`, `backend/__pycache__/`, `frontend/anonymize/node_modules/`, and `frontend/anonymize/.next/` are ignored via the root `.gitignore` file.)*
+## Deployment Plan (Updated)
 
-## Deployment Plan
-
-*   **Frontend:** Deploy to [Vercel](https://vercel.com/), connected to the GitHub repository.
-*   **Backend:**
-    1.  Containerize using Docker (`Dockerfile`).
-    2.  Push Docker image to AWS ECR (Elastic Container Registry).
-    3.  Deploy container on AWS ECS (Elastic Container Service) using the Fargate launch type.
+1.  **Frontend:** Deployed to [Vercel](https://vercel.com/). ✅
+2.  **Backend:**
+    1.  Containerize using Docker (`Dockerfile`). ✅
+    2.  Push Docker image to **Google Artifact Registry**. ✅
+    3.  Deploy container on **Google Cloud Run** (Fargate-like serverless). ✅
+    4.  Update Vercel frontend environment variable (`NEXT_PUBLIC_API_URL`) to point to the deployed backend HTTPS URL. ✅
+    5.  **Resolve CORS issue** between Vercel frontend and Cloud Run backend. (In Progress ⏳)
 
 ## Setup & Running Locally
 
 ### Prerequisites
 
 *   [Python](https://www.python.org/downloads/) >= 3.9
-*   [Node.js](https://nodejs.org/) (which includes npm/npx) >= 18.x
+*   [Node.js](https://nodejs.org/) >= 18.x
 *   [Git](https://git-scm.com/)
+*   [Docker Desktop](https://www.docker.com/products/docker-desktop/) or Docker Engine
 *   Ability to create Python virtual environments (`venv`).
 
-### Backend Setup & Run
+### Option 1: Run Backend Directly
 
-1.  Clone the repository: `git clone git@github.com:cheezycoding/Anonymizer.git`
-2.  Navigate to the project root: `cd Anonymizer`
-3.  Create and activate a Python virtual environment:
-    ```bash
-    python -m venv venv
-    # Windows:
-    .\venv\Scripts\activate
-    # Mac/Linux:
-    source venv/bin/activate
-    ```
-4.  Install Python dependencies:
-    ```bash
-    pip install -r backend/requirements.txt
-    ```
-5.  Download the spaCy language model:
-    ```bash
-    python -m spacy download en_core_web_sm
-    ```
-6.  Run the FastAPI server (from the project root):
-    ```bash
-    uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
-    ```
-7.  The backend API is now available at `http://localhost:8000`. CORS is configured to allow requests from `http://localhost:3000`.
+1.  Clone repo: `git clone git@github.com:cheezycoding/Anonymizer.git && cd Anonymizer`
+2.  Setup venv: `python -m venv venv && source venv/bin/activate` (or `.\venv\Scripts\activate` on Windows)
+3.  Install deps: `pip install -r backend/requirements.txt`
+4.  Download model: `python -m spacy download en_core_web_sm`
+5.  Run server: `uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000`
 
-### Frontend Setup & Run
+### Option 2: Run Backend via Docker (Recommended for Consistency)
+
+1.  Clone repo: `git clone git@github.com:cheezycoding/Anonymizer.git && cd Anonymizer`
+2.  Build image: `docker build -t anonymizer-backend ./backend`
+3.  Run container: `docker run --rm -p 8000:8000 anonymizer-backend`
+
+### Frontend Setup & Run (Connects to Backend on Port 8000)
 
 1.  Open a **new terminal** in the project root (`Anonymizer`).
-2.  Navigate to the Next.js project directory:
-    ```bash
-    cd frontend/anonymize
-    ```
-3.  Install Node.js dependencies:
-    ```bash
-    npm install
-    ```
-4.  Run the Next.js development server:
-    ```bash
-    npm run dev
-    ```
-5.  The frontend application is now available at `http://localhost:3000`. 
+2.  Navigate to frontend: `cd frontend/anonymize`
+3.  Install deps: `npm install`
+4.  Run dev server: `npm run dev` (Frontend available at `http://localhost:3000`) 

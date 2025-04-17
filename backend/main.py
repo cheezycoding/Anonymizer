@@ -6,7 +6,7 @@ import os
 import uuid
 import traceback
 
-from .logic.process_pdf import (
+from logic.process_pdf import (
     extract_text_from_pdf,
     find_pii_entities,
     find_nric_matches,
@@ -20,8 +20,12 @@ app = FastAPI()
 # For development, we'll allow our frontend's origin.
 origins = [
     "http://localhost:3000",  # The origin of your Next.js frontend app
+    "https://anonymizer-two.vercel.app", # Deployed Vercel frontend origin
     # You could add other origins here if needed (e.g., a deployed frontend URL)
 ]
+
+# TEMPORARY DEBUGGING: Allow all origins
+# origins = ["*"]
 
 # Add the CORS middleware to the FastAPI application
 app.add_middleware(
